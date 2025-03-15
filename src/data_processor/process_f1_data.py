@@ -79,7 +79,7 @@ def write_telemetry_for_session(year, race, session, session_data):
         session = "race"
     all_telemetry_file = data_path.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
     write_parquet(all_telemetry_df, all_telemetry_file)
-    table_name = f"telemetry_{session.lower()}_{year}"
+    table_name = f"telemetry"
     db = f"{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
     create_duckdb_table(all_telemetry_df, table_name, str(db_path))
@@ -92,7 +92,7 @@ def write_laps_data_for_session(year, race, session, session_data):
     all_laps_file = data_path.joinpath(f"laps_{session.lower()}_{year}.parquet")
     laps_df = session_data.laps
     write_parquet(laps_df, all_laps_file)
-    table_name = f"laps_{session.lower()}_{year}"
+    table_name = f"laps"
     db = f"{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
     create_duckdb_table(laps_df, table_name, str(db_path))
