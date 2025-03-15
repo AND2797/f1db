@@ -1,9 +1,12 @@
 import fastf1
 import pandas as pd
 from src.data_processor.parquet_utils import write_parquet
+from src.data_processor.duckdb_utils import create_duckdb_table
 from src.f1data.f1_data_access import get_session_data
 from src.config import config
+from src.cache.connection import in_memory_conn
 import duckdb
+import os
 from pathlib import Path
 
 
@@ -25,6 +28,12 @@ def write_session_data(year, race, session):
     session_data = get_session_data(year, race, session)
     write_laps_data_for_session(year, race, session, session_data)
     write_telemetry_for_session(year, race, session, session_data)
+    data_path = get_data_path(year, race, session)
+    db = f"{session}_{year}.duckdb"
+    db_path = os.path.join(data_path, db)
+    query = f"ATTACH '{db_path}' AS {race.lower()}_{session.lower()}_{year}"
+    in_memory_conn.execute(query)
+
 
 
 def get_all_telemetry(laps):
@@ -35,6 +44,8 @@ def get_all_telemetry(laps):
     for index, each_lap in laps.iterrows():
         try:
             telemetry = each_lap.get_telemetry()
+            telemetry["Driver"] = each_lap["Driver"]
+            telemetry["DriverNumber"] = each_lap["Driver"]
             telemetry["LapNumber"] = index
             telemetry_list.append(telemetry)
         except Exception as e:
@@ -62,28 +73,38 @@ def write_telemetry_for_session(year, race, session, session_data):
         all_telemetry.append(telemetry)
 
     all_telemetry_df = pd.concat(all_telemetry)
-    all_telemetry_file = data_path.joinpath(f"telemetry_{session}_{year}.parquet")
+    if session.lower() == "q" or session.lower() == "qualifying" or session.lower() == "qualy":
+        session = "qualifying"
+    elif session.lower() == "r" or session.lower() == "race":
+        session = "race"
+    all_telemetry_file = data_path.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
     write_parquet(all_telemetry_df, all_telemetry_file)
-
-    # db = data_path.joinpath("telemetry.duckdb")
-    # con = duckdb.connect(f"{db}")
-    # table = f"telemetry_{race}_{session}"
-    # tele_df = pd.concat(all_telemetry)
-    # con.execute(f"CREATE TABLE {table} AS SELECT * FROM tele_df")
-    # con.close()
+    table_name = f"telemetry_{session.lower()}_{year}"
+    db = f"{session.lower()}_{year}.duckdb"
+    db_path = data_path.joinpath(f"{db}")
+    create_duckdb_table(all_telemetry_df, table_name, str(db_path))
+    print("done")
 
 
 def write_laps_data_for_session(year, race, session, session_data):
     data_path = get_data_path(year, race, session)
     data_path.mkdir(parents=True, exist_ok=True)
-    all_laps_file = data_path.joinpath(f"laps_{session}_{year}.parquet")
+    all_laps_file = data_path.joinpath(f"laps_{session.lower()}_{year}.parquet")
     laps_df = session_data.laps
     write_parquet(laps_df, all_laps_file)
-
+    table_name = f"laps_{session.lower()}_{year}"
+    db = f"{session.lower()}_{year}.duckdb"
+    db_path = data_path.joinpath(f"{db}")
+    create_duckdb_table(laps_df, table_name, str(db_path))
+    print("done")
 
 
 def get_data_path(year, race, session):
-    data_path = f"{config.data_root}/{year}/{race}/{session}"
+    if session.lower() == "q" or session.lower() == "qualifying" or session.lower() == "qualy":
+        session = "qualifying"
+    elif session.lower() == "r" or session.lower() == "race":
+        session = "race"
+    data_path = f"{config.data_root}/{year}/{race.lower()}/{session.lower()}"
     return Path(data_path)
 
 

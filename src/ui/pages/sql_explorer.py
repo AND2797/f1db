@@ -6,30 +6,31 @@ from pathlib import Path
 import pandas as pd
 import re
 import duckdb
+from src.cache.connection import in_memory_conn
 
 
 def get_available_tables():
     #TODO: maybe we need to have one duckdb table per Race.
     # that table should have telemetry data for Q, R, etc.
-    data_root = config.data_root
-    available_tables = glob.glob(os.path.join(data_root, '*', '*', '*', '*.parquet'))
-    relative_paths = [str(Path(table).relative_to(Path(data_root))) for table in available_tables]
-    df = pd.DataFrame(relative_paths, index=None, columns=["Available Tables"])
+    # data_root = config.data_root
+    query = "SELECT * FROM information_schema.tables;"
+    df = in_memory_conn.execute(query).fetchdf()
     st.dataframe(df, height=150)
 
 
 def sql_explorer():
     query = st.text_area("Enter SQL")
     if st.button("Execute"):
-        conn = duckdb.connect()
+        conn = in_memory_conn
         try:
+            def replace_with_full_path(match):
+                filename = match.group(1)
+                full_path = os.path.join(config.data_root, filename)
+                return f"'{full_path}'"
+
             if query:
                 pattern = r"'([^']+\.parquet)'"
 
-                def replace_with_full_path(match):
-                    filename = match.group(1)
-                    full_path = os.path.join(config.data_root, filename)
-                    return f"'{full_path}'"
 
                 modified_query = re.sub(pattern, replace_with_full_path, query)
 
@@ -37,12 +38,16 @@ def sql_explorer():
                 # result['SessionTime'] = pd.to_timedelta(result['SessionTime'])
                 # result['Time'] = pd.to_timedelta(result['Time'])
                 st.dataframe(result)
-        except:
-            conn.close()
+        except Exception as e:
+            print(e)
             print("hehe")
         finally:
-            conn.close()
+            print("finally hehe")
 
+
+# @st.cache_resource()
+# def open_session_connection():
+#     return duckdb.connect(":memory:")
 
 
 def main():
