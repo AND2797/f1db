@@ -29,7 +29,8 @@ def write_session_data(year, race, session):
     write_laps_data_for_session(year, race, session, session_data)
     write_telemetry_for_session(year, race, session, session_data)
     data_path = get_data_path(year, race, session)
-    db = f"{session}_{year}.duckdb"
+    # TODO: need to find a way to not reconstruct the db path again and again.
+    db = f"{race.lower()}_{session}_{year}.duckdb"
     db_path = os.path.join(data_path, db)
     query = f"ATTACH '{db_path}' AS {race.lower()}_{session.lower()}_{year}"
     in_memory_conn.execute(query)
@@ -80,10 +81,10 @@ def write_telemetry_for_session(year, race, session, session_data):
     all_telemetry_file = data_path.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
     write_parquet(all_telemetry_df, all_telemetry_file)
     table_name = f"telemetry"
-    db = f"{session.lower()}_{year}.duckdb"
+    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
     create_duckdb_table(all_telemetry_df, table_name, str(db_path))
-    print("done")
+    print("done telemetry")
 
 
 def write_laps_data_for_session(year, race, session, session_data):
@@ -93,10 +94,10 @@ def write_laps_data_for_session(year, race, session, session_data):
     laps_df = session_data.laps
     write_parquet(laps_df, all_laps_file)
     table_name = f"laps"
-    db = f"{session.lower()}_{year}.duckdb"
+    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
     create_duckdb_table(laps_df, table_name, str(db_path))
-    print("done")
+    print("done laps")
 
 
 def get_data_path(year, race, session):

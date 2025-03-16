@@ -1,20 +1,23 @@
 import streamlit as st
 from src.config import config
-import glob
 import os
-from pathlib import Path
-import pandas as pd
 import re
-import duckdb
 from src.cache.connection import in_memory_conn
 
 
 def get_available_tables():
+    """
+    This function displays the available databases and tables on the in-memory duckdb instance
+    :return:
+    """
     #TODO: maybe we need to have one duckdb table per Race.
     # that table should have telemetry data for Q, R, etc.
     # data_root = config.data_root
     query = "SELECT * FROM information_schema.tables;"
     df = in_memory_conn.execute(query).fetchdf()
+    df = df.rename({'table_catalog': 'database', 'table_name': 'table'}, axis=1)
+    df = df[['database', 'table']]
+    df = df.groupby("database")["table"].apply(list).reset_index().set_index(df.columns[0])
     st.dataframe(df, height=150)
 
 
@@ -35,19 +38,43 @@ def sql_explorer():
                 modified_query = re.sub(pattern, replace_with_full_path, query)
 
                 result = conn.execute(modified_query).fetchdf()
-                # result['SessionTime'] = pd.to_timedelta(result['SessionTime'])
-                # result['Time'] = pd.to_timedelta(result['Time'])
-                st.dataframe(result)
+                # st.dataframe is not able to render
+                df_html = result.to_html(index=False, escape=False)
+                st.markdown(html_code + df_html, unsafe_allow_html=True)
         except Exception as e:
             print(e)
             print("hehe")
         finally:
             print("finally hehe")
 
-
-# @st.cache_resource()
-# def open_session_connection():
-#     return duckdb.connect(":memory:")
+# TODO: clean this up.
+# Custom CSS for word-wrapping with fixed width
+html_code = """
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: Arial, sans-serif;
+    }
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+        vertical-align: top;  /* Ensures text stays at the top */
+        white-space: normal;  /* Allows text wrapping */
+        word-wrap: break-word; /* Forces text to break if too long */
+        max-width: 200px;  /* Restricts width to prevent stretching */
+        overflow-wrap: break-word; /* Alternative wrapping for extra support */
+    }
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+"""
 
 
 def main():
