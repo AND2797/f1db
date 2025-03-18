@@ -2,7 +2,8 @@ import streamlit as st
 from src.config import config
 import os
 import re
-from src.cache.connection import in_memory_conn
+import pyarrow.flight as flight
+from StreamlitUI.arrow_client import arrow_duckdb_client
 
 
 def get_available_tables():
@@ -10,11 +11,8 @@ def get_available_tables():
     This function displays the available databases and tables on the in-memory duckdb instance
     :return:
     """
-    #TODO: maybe we need to have one duckdb table per Race.
-    # that table should have telemetry data for Q, R, etc.
-    # data_root = config.data_root
     query = "SELECT * FROM information_schema.tables;"
-    df = in_memory_conn.execute(query).fetchdf()
+    df = arrow_duckdb_client.execute(query)
     df = df.rename({'table_catalog': 'database', 'table_name': 'table'}, axis=1)
     df = df[['database', 'table']]
     df = df.groupby("database")["table"].apply(list).reset_index().set_index(df.columns[0])
@@ -24,28 +22,17 @@ def get_available_tables():
 def sql_explorer():
     query = st.text_area("Enter SQL")
     if st.button("Execute"):
-        conn = in_memory_conn
         try:
-            def replace_with_full_path(match):
-                filename = match.group(1)
-                full_path = os.path.join(config.data_root, filename)
-                return f"'{full_path}'"
+            df = arrow_duckdb_client.execute(query)
+            st.dataframe(df, height=150)
+            # df.to_html does not work well for large dataframes. It complains about memory issues.
+            # st.dataframe does not display timedelta [ns] correctly
 
-            if query:
-                pattern = r"'([^']+\.parquet)'"
-
-
-                modified_query = re.sub(pattern, replace_with_full_path, query)
-
-                result = conn.execute(modified_query).fetchdf()
-                # st.dataframe is not able to render
-                df_html = result.to_html(index=False, escape=False)
-                st.markdown(html_code + df_html, unsafe_allow_html=True)
+            # df_html = df.to_html(index=False, escape=False)
+            # st.markdown(html_code + df_html, unsafe_allow_html=True)
         except Exception as e:
             print(e)
-            print("hehe")
-        finally:
-            print("finally hehe")
+
 
 # TODO: clean this up.
 # Custom CSS for word-wrapping with fixed width

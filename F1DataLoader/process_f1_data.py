@@ -1,11 +1,10 @@
 import fastf1
 import pandas as pd
-from src.data_processor.parquet_utils import write_parquet
-from src.data_processor.duckdb_utils import create_duckdb_table
-from src.f1data.f1_data_access import get_session_data
+from F1DataLoader.parquet_utils import write_parquet
+from F1DataLoader.duckdb_utils import create_duckdb_table
+from F1DataLoader.f1_data_access import get_session_data
 from src.config import config
 from src.cache.connection import in_memory_conn
-import duckdb
 import os
 from pathlib import Path
 
