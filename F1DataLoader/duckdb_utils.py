@@ -1,5 +1,4 @@
 import duckdb
-from src.config import config
 import os
 import glob
 import pandas as pd

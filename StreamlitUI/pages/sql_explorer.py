@@ -1,5 +1,4 @@
 import streamlit as st
-from src.config import config
 import os
 import re
 import pyarrow.flight as flight
