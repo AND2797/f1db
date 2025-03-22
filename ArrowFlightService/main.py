@@ -1,8 +1,8 @@
 import duckdb
 import pyarrow as pa
 import pyarrow.flight as flight
-from pathlib import Path
-from config import data_root
+import pandas as pd
+import json
 from data import discover_duckdb_sources
 from duckdb_processor import attach_db_to_conn
 
@@ -25,6 +25,23 @@ class FlightServer(pa.flight.FlightServerBase):
         result = self.conn.execute(sql_query).fetch_arrow_table()
         return flight.RecordBatchStream(result)
 
+    def do_action(self, context, action):
+        """
+        If a datasource is newly created, this endpoint is invoked to
+        attach the new dataset to the inmemory connection
+        :param context:
+        :param ticket:
+        :param action:
+        :return:
+        """
+        action_type = action.type
+        action_body = action.body.to_pybytes().decode()
+
+        if action_type == "attach_new_table":
+            print("in attach_new_table")
+            data_dict = json.loads(action_body)
+            data_source_info = pd.DataFrame(data_dict)
+            attach_db_to_conn(self.conn, data_source_info)
 
 
 if __name__ == '__main__':

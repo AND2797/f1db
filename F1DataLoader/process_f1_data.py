@@ -28,9 +28,11 @@ def write_session_data(year, race, session):
     write_telemetry_for_session(year, race, session, session_data)
     data_path = get_data_path(year, race, session)
     # TODO: need to find a way to not reconstruct the db path again and again.
-    db = f"{race.lower()}_{session}_{year}.duckdb"
+    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
     db_path = os.path.join(data_path, db)
-    query = f"ATTACH '{db_path}' AS {race.lower()}_{session.lower()}_{year}"
+    attach_as = f"{race.lower()}_{session.lower()}_{year}"
+    db_info = pd.DataFrame(columns=['path', 'attach_as'], data=[[db_path, attach_as]])
+    return db_info
 
 
 
