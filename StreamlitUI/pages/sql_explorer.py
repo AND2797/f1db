@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_ace import st_ace
 import os
 import re
 import pyarrow.flight as flight
@@ -20,6 +21,7 @@ def get_available_tables():
 
 def sql_explorer():
     query = st.text_area("Enter SQL")
+    # query = st_ace(language="sql", height=200)
     if st.button("Execute"):
         try:
             df = arrow_duckdb_client.execute(query)
