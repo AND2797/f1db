@@ -8,20 +8,65 @@ from pathlib import Path
 import config
 
 class F1DataRequest:
-    pass
+    def __init__(self, year, race, session):
+        self.year = year
+        self.race = race
+        self.session = session
+        self.duck_table = f"{race.lower()}_{session.lower()}_{year}.duckdb"
+        self.session_data = get_session_data(year, race, session)
+        self.data_root = Path(config.data_root)
+        self.data_dir = self.data_root.joinpath(f"{year}", f"{race.lower()}", f"{session.lower()}")
+        self.raw_data_dir = self.data_dir.joinpath("raw")
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.raw_data_dir.mkdir(parents=True, exist_ok=True)
+        self.db_path = self.data_dir.joinpath(self.duck_table)
+        self.db_info = pd.DataFrame(columns=['path', 'attach_as'], data=[[str(self.db_path),
+                                                                          f"{race.lower()}_{session.lower()}_{year}"]])
+
+    def get_db_info(self):
+        return self.db_info
+
+    def write_laps_data(self):
+        file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
+        laps_df = self.session_data.laps.copy()
+        laps_df['Year'] = self.year
+        laps_df['Race'] = self.race
+        laps_df['Session'] = self.session
+        laps_df = timedelta_to_seconds(laps_df)
+        file_path = self.raw_data_dir.joinpath(file_name)
+        write_parquet(laps_df, file_path)
+        create_duckdb_table(laps_df, "laps", str(self.db_path))
+
+    def write_telemetry_data(self):
+        telemetry_df = process_telemetry_data(self.year, self.race, self.session,
+                                              self.session_data)
+
+        file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
+        file_path = self.raw_data_dir.joinpath(file_name)
+        write_parquet(telemetry_df, file_path)
+        create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
+
+    def write_session_data(self):
+        self.write_laps_data()
+        self.write_telemetry_data()
 
 
-def get_available_tables():
-    data_root = Path(config.data_root)
-    print(data_root)
+def process_telemetry_data(year, race, session, session_data):
+    drivers = session_data.drivers
+    all_telemetry = []
+    for driver in drivers:
+        laps = session_data.laps.pick_drivers(driver)
+        telemetry = get_all_telemetry(laps)
+        # streamlit is unable to render timedelta[ns]. converting it to seconds
+        telemetry["Driver"] = driver
+        telemetry['Year'] = year
+        telemetry['Race'] = race
+        telemetry['Session'] = session
+        telemetry = timedelta_to_seconds(telemetry)
+        all_telemetry.append(telemetry)
 
-
-def annotate_telemetry_with_lap_number(laps: fastf1.core.Laps):
-    laps = laps.reset_index(drop=True)
-    laps.index += 1
-    for index, each_lap in laps.iterrows():
-        each_lap.telemetry["LapNumber"] = each_lap["LapNumber"]
-    return laps
+    all_telemetry_df = pd.concat(all_telemetry)
+    return all_telemetry_df
 
 
 def write_session_data(year, race, session):
@@ -36,7 +81,6 @@ def write_session_data(year, race, session):
     attach_as = f"{race.lower()}_{session.lower()}_{year}"
     db_info = pd.DataFrame(columns=['path', 'attach_as'], data=[[db_path, attach_as]])
     return db_info
-
 
 
 def get_all_telemetry(laps):

@@ -1,20 +1,16 @@
 from fastapi import FastAPI
-from process_f1_data import get_session_data, write_laps_data_for_session, write_telemetry_for_session, write_session_data
+from process_f1_data import F1DataRequest
 from arrow_client import arrow_duckdb_client
 app = FastAPI()
 
 
 @app.post("/session/load")
 def load_session_data(year: int, race, session):
-    db_info = write_session_data(year, race, session)
-    print(f"written session date to {db_info}")
-    db_info_json = db_info.to_json()
+    data_request = F1DataRequest(year, race, session)
+    data_request.write_session_data()
+    db_info_json = data_request.get_db_info().to_json()
     arrow_duckdb_client.attach_new_table(db_info_json)
     print("invoked arrow call")
-
-# TODO:
-# need to link with arrow flight service to attach .duckdb when it's ready
-# need to interface with streamlit UI to load data
 
 
 if __name__ == "__main__":
