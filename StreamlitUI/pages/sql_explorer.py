@@ -19,6 +19,10 @@ def get_available_tables():
     st.dataframe(df, height=150)
 
 
+#TODO: CLEAN UP DATA FORMAT IN F1DataLOader. Too complicated figuring out paths and shit.
+#TODO: Make a config file
+#TODO: Make a LOGGER.
+#TODO: ability to view virtual tables, download them as parquet file or .duckdb?
 def sql_explorer():
     query = st.text_area("Enter SQL")
     # query = st_ace(language="sql", height=200)

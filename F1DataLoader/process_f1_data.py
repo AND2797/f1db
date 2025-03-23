@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import config
 
+class F1DataRequest:
+    pass
+
 
 def get_available_tables():
     data_root = Path(config.data_root)
@@ -65,11 +68,15 @@ def write_telemetry_for_session(year, race, session, session_data):
         laps = session_data.laps.pick_drivers(driver)
         telemetry = get_all_telemetry(laps)
         # streamlit is unable to render timedelta[ns]. converting it to seconds
-        telemetry['SessionTime'] = telemetry['SessionTime'].dt.total_seconds()
-        telemetry['Time'] = telemetry['Time'].dt.total_seconds()
+        # telemetry['SessionTime'] = telemetry['SessionTime'].dt.total_seconds()
+        # telemetry['Time'] = telemetry['Time'].dt.total_seconds()
         telemetry["Driver"] = driver
+        telemetry['Year'] = year
+        telemetry['Race'] = race
+        telemetry['Session'] = session
         # telemetry_file = data_path.joinpath(f"{driver}_telemetry.parquet")
         # write_parquet(telemetry, telemetry_file)
+        telemetry = timedelta_to_seconds(telemetry)
         all_telemetry.append(telemetry)
 
     all_telemetry_df = pd.concat(all_telemetry)
@@ -77,8 +84,10 @@ def write_telemetry_for_session(year, race, session, session_data):
         session = "qualifying"
     elif session.lower() == "r" or session.lower() == "race":
         session = "race"
-    all_telemetry_file = data_path.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
-    write_parquet(all_telemetry_df, all_telemetry_file)
+    parquet_dir = data_path.joinpath("raw")
+    parquet_dir.mkdir(parents=True, exist_ok=True)
+    parquet_file_path = parquet_dir.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
+    write_parquet(all_telemetry_df, parquet_file_path)
     table_name = f"telemetry"
     db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
@@ -89,9 +98,16 @@ def write_telemetry_for_session(year, race, session, session_data):
 def write_laps_data_for_session(year, race, session, session_data):
     data_path = get_data_path(year, race, session)
     data_path.mkdir(parents=True, exist_ok=True)
-    all_laps_file = data_path.joinpath(f"laps_{session.lower()}_{year}.parquet")
-    laps_df = session_data.laps
-    write_parquet(laps_df, all_laps_file)
+    parquet_dir = data_path.joinpath("raw")
+    parquet_dir.mkdir(parents=True, exist_ok=True)
+    parquet_file_path = parquet_dir.joinpath(f"laps_{session.lower()}_{year}.parquet")
+    laps_df = session_data.laps.copy()
+    laps_df['Year'] = year
+    laps_df['Race'] = race
+    laps_df['Session'] = session
+    laps_df = timedelta_to_seconds(laps_df)
+    # convert timedelta
+    write_parquet(laps_df, parquet_file_path)
     table_name = f"laps"
     db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
     db_path = data_path.joinpath(f"{db}")
@@ -106,6 +122,16 @@ def get_data_path(year, race, session):
         session = "race"
     data_path = f"{config.data_root}/{year}/{race.lower()}/{session.lower()}"
     return Path(data_path)
+
+
+def timedelta_to_seconds(df):
+    # FastF1 provides timing data as timedelta[ns] fields.
+    # The problem with timedelta[ns] is that it is not represented correctly in Arrow tables
+    for col in df.select_dtypes(include=['timedelta64[ns]']).columns:
+        df[col] = df[col].dt.total_seconds()
+
+    return df
+
 
 
 if __name__ == '__main__':
