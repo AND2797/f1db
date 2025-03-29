@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from process_f1_data import F1DataRequest
-from arrow_client import arrow_duckdb_client
+from F1DataLoader.ArrowClient.arrow_client import arrow_duckdb_client
+from F1DataLoader.app_utils.logger_utils import setup_logger
+from F1DataLoader.app_utils.config_utils import get_property
+
+
 app = FastAPI()
 
+logger = setup_logger(get_property("App", "log_file"))
 
 @app.post("/session/load")
 def load_session_data(year: int, race, session):
+    logger.info("RECEIVED REQUEST")
     data_request = F1DataRequest(year, race, session)
     data_request.write_session_data()
     db_info_json = data_request.get_db_info().to_json()

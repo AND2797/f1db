@@ -1,11 +1,11 @@
-import fastf1
 import pandas as pd
 from F1DataLoader.parquet_utils import write_parquet
 from F1DataLoader.duckdb_utils import create_duckdb_table
 from F1DataLoader.f1_data_access import get_session_data
 import os
 from pathlib import Path
-import config
+from F1DataLoader.app_utils.config_utils import get_property
+
 
 class F1DataRequest:
     def __init__(self, year, race, session):
@@ -13,8 +13,7 @@ class F1DataRequest:
         self.race = race
         self.session = session
         self.duck_table = f"{race.lower()}_{session.lower()}_{year}.duckdb"
-        self.session_data = get_session_data(year, race, session)
-        self.data_root = Path(config.data_root)
+        self.data_root = Path(get_property("App", "output_root"))
         self.data_dir = self.data_root.joinpath(f"{year}", f"{race.lower()}", f"{session.lower()}")
         self.raw_data_dir = self.data_dir.joinpath("raw")
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -22,20 +21,27 @@ class F1DataRequest:
         self.db_path = self.data_dir.joinpath(self.duck_table)
         self.db_info = pd.DataFrame(columns=['path', 'attach_as'], data=[[str(self.db_path),
                                                                           f"{race.lower()}_{session.lower()}_{year}"]])
+        self.session_data = get_session_data(year, race, session)
 
     def get_db_info(self):
         return self.db_info
 
     def write_laps_data(self):
         file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
+        session_info = self.session_data.session_info
+        year = session_info["StartDate"].year
+        race = session_info["Meeting"]["Circuit"]["ShortName"]
+        session = session_info["Type"]
+
         laps_df = self.session_data.laps.copy()
-        laps_df['Year'] = self.year
-        laps_df['Race'] = self.race
-        laps_df['Session'] = self.session
+        laps_df['Year'] = year
+        # race != country
+        laps_df['Race'] = race
+        laps_df['Session'] = session
         laps_df = timedelta_to_seconds(laps_df)
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(laps_df, file_path)
-        create_duckdb_table(laps_df, "laps", str(self.db_path))
+        # create_duckdb_table(laps_df, "laps", str(self.db_path))
 
     def write_telemetry_data(self):
         telemetry_df = process_telemetry_data(self.year, self.race, self.session,
@@ -44,7 +50,7 @@ class F1DataRequest:
         file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(telemetry_df, file_path)
-        create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
+        # create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
 
     def write_session_data(self):
         self.write_laps_data()
@@ -84,18 +90,17 @@ def write_session_data(year, race, session):
 
 
 def get_all_telemetry(laps):
-    laps = laps.reset_index(drop=True)
-    laps.index += 1
     #TODO: find a better way to do this, basically we just need to add the LapNumber to telemetry
     telemetry_list = []
     for index, each_lap in laps.iterrows():
         try:
             telemetry = each_lap.get_telemetry()
             telemetry["Driver"] = each_lap["Driver"]
-            telemetry["DriverNumber"] = each_lap["Driver"]
-            telemetry["LapNumber"] = index
+            telemetry["DriverNumber"] = each_lap["DriverNumber"]
+            telemetry["LapNumber"] = each_lap["LapNumber"]
             telemetry_list.append(telemetry)
         except Exception as e:
+            print(f"{e}")
             print(f"Exception in getting telemetry for driver: {each_lap['Driver']}")
             continue
 
@@ -164,7 +169,8 @@ def get_data_path(year, race, session):
         session = "qualifying"
     elif session.lower() == "r" or session.lower() == "race":
         session = "race"
-    data_path = f"{config.data_root}/{year}/{race.lower()}/{session.lower()}"
+    output_root = get_property("App", "output_root")
+    data_path = f"{output_root}/{year}/{race.lower()}/{session.lower()}"
     return Path(data_path)
 
 

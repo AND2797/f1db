@@ -1,9 +1,5 @@
 import streamlit as st
-from streamlit_ace import st_ace
-import os
-import re
-import pyarrow.flight as flight
-from StreamlitUI.arrow_client import arrow_duckdb_client
+from StreamlitUI.ArrowClient.arrow_client import arrow_duckdb_client
 
 
 def get_available_tables():
@@ -20,7 +16,7 @@ def get_available_tables():
 
 
 #TODO: CLEAN UP DATA FORMAT IN F1DataLOader. Too complicated figuring out paths and shit.
-#TODO: Make a config file
+#TODO: Make a config_files file
 #TODO: Make a LOGGER.
 #TODO: ability to view virtual tables, download them as parquet file or .duckdb?
 def sql_explorer():
