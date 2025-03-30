@@ -7,6 +7,7 @@ from StreamlitUI.src.AppUtils.logger_utils import setup_logger
 
 logger = setup_logger(get_property("App", "log_file"))
 
+
 def load_data(request_df: pd.DataFrame):
     if request_df.empty:
         return
@@ -33,7 +34,7 @@ def main():
         events.loc[:, "Session"] = ""
         if year and f"events_{year}" in st.session_state:
             selected = st.data_editor(events,
-                                      disabled=('Country', 'Event Name', 'Official Event Name'),
+                                      disabled=('Country', 'EventName', 'OfficialEventName'),
                                       hide_index=True)
 
             if st.button("Load Data"):
