@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from process_f1_data import F1DataRequest
-from F1DataLoader.ArrowClient.arrow_client import arrow_duckdb_client
-from F1DataLoader.app_utils.logger_utils import setup_logger
-from F1DataLoader.app_utils.config_utils import get_property
+from F1Data.process_f1_data import F1DataRequest
+from ArrowFlight.arrow_client import arrow_duckdb_client
+from AppUtils.logger_utils import setup_logger
+from AppUtils.config_utils import get_property
 
 
 app = FastAPI()

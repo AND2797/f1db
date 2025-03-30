@@ -3,7 +3,7 @@ import os
 import glob
 import pandas as pd
 
-
+# Maybe rename this to client. Create duckdb client
 
 def create_duckdb_table(df, table_name, db_path):
     con = duckdb.connect(db_path)

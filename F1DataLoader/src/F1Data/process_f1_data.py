@@ -1,10 +1,10 @@
 import pandas as pd
-from F1DataLoader.parquet_utils import write_parquet
-from F1DataLoader.duckdb_utils import create_duckdb_table
-from F1DataLoader.f1_data_access import get_session_data
+from F1DataLoader.src.AppUtils.config_utils import get_property
+from F1DataLoader.src.parquet_utils import write_parquet
+from F1DataLoader.src.DuckDB.duckdb_utils import create_duckdb_table
+from F1DataLoader.src.F1Data.f1_data_access import get_session_data
 import os
 from pathlib import Path
-from F1DataLoader.app_utils.config_utils import get_property
 
 
 class F1DataRequest:
