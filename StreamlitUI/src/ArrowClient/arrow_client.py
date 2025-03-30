@@ -1,4 +1,5 @@
 import pyarrow.flight as flight
+from StreamlitUI.src.AppUtils.config_utils import get_property
 
 
 class ArrowDuckDBClient:
@@ -14,4 +15,5 @@ class ArrowDuckDBClient:
         return df
 
 
-arrow_duckdb_client = ArrowDuckDBClient("grpc://localhost:8815")
+flight_server = get_property("App", "flight_server")
+arrow_duckdb_client = ArrowDuckDBClient(f"{flight_server}")

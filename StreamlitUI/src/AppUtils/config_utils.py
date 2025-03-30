@@ -23,6 +23,6 @@ def get_property(section, key, fallback=None):
     # fix env
     # better way to get project root? this one assumes where config_utils.py is
     project_root = pathlib.Path(__file__).parent.parent.resolve()
-    conf_file = project_root.joinpath("config_files", env_name, "config_files.txt")
+    conf_file = project_root.joinpath("config_files", env_name, "config.txt")
     conf = Config(str(conf_file))
     return conf.get_property(section, key, fallback)

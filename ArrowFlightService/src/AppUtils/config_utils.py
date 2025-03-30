@@ -1,6 +1,7 @@
 import configparser
 import pathlib
 
+
 class Config:
     _instance = None
 
