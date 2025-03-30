@@ -14,4 +14,12 @@ The project has 3 pieces -
 - ArrowFlightService - Spins up an ArrowFlightServer that exposes .duckdb databases created by F1DataLoader
 - Streamlit UI - Just a UI for running SQL queries and viewing available datasets
 
+# TODO:
+[ ] implement logging
+
+[ ] implement a config
+
+[ ] Load a dataset for entire season 
+
+[ ] start playing with some data !!
 

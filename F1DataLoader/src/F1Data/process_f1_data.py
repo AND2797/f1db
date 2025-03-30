@@ -41,7 +41,7 @@ class F1DataRequest:
         laps_df = timedelta_to_seconds(laps_df)
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(laps_df, file_path)
-        # create_duckdb_table(laps_df, "laps", str(self.db_path))
+        create_duckdb_table(laps_df, "laps", str(self.db_path))
 
     def write_telemetry_data(self):
         telemetry_df = process_telemetry_data(self.year, self.race, self.session,
@@ -50,7 +50,7 @@ class F1DataRequest:
         file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(telemetry_df, file_path)
-        # create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
+        create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
 
     def write_session_data(self):
         self.write_laps_data()

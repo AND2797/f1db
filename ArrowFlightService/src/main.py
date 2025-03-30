@@ -3,8 +3,8 @@ import pyarrow as pa
 import pyarrow.flight as flight
 import pandas as pd
 import json
-from data import discover_duckdb_sources
-from duckdb_processor import attach_db_to_conn
+from ArrowFlightService.src.DuckDB.data import discover_duckdb_sources
+from ArrowFlightService.src.DuckDB.duckdb_processor import attach_db_to_conn
 
 
 class FlightServer(pa.flight.FlightServerBase):

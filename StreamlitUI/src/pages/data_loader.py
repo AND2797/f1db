@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from StreamlitUI.F1DataLoaderRest.client import F1DataLoaderClient
+from StreamlitUI.src.F1DataLoaderRest.client import F1DataLoaderClient
 
 
 def load_data(request_df: pd.DataFrame):
@@ -17,8 +17,13 @@ def load_data(request_df: pd.DataFrame):
 def main():
     st.title("Dataloader")
     data = pd.DataFrame(columns=["Year", "Race", "Session"])
-    request = st.data_editor(data, num_rows="dynamic", use_container_width=True)
+    available_sessions = ["Race", "Qualifying", "Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying", "Sprint"]
+    request = st.data_editor(data, num_rows="dynamic", use_container_width=True,
+                             column_config={"Session": st.column_config.SelectboxColumn(options=available_sessions,
+                                                                                          required=True)})
     if st.button("Load"):
+        request["Race"] = request["Race"].str.lower()
+        request["Race"] = request["Race"].str.replace('', '_')
         load_data(request)
 
 
