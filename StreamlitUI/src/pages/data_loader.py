@@ -38,13 +38,14 @@ def main():
 
             if st.button("Load Data"):
                 selected = selected.loc[selected["Load"]]
+
+                # Create request_df for loading data
                 selected.loc[:, "Session"] = selected["Session"].apply(lambda x: [item.lower().strip() for item in x.split(',')])
                 request_df = pd.DataFrame(columns=["Year", "Race", "Session"])
                 request_df["Year"] = selected["EventDate"].dt.year
                 request_df["Race"] = selected["EventName"].str.replace(' ', '_').str.replace('-', '_')
                 request_df["Session"] = selected["Session"]
                 request_df = request_df.explode(["Session"])
-
                 load_data(request_df)
 
 
