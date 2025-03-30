@@ -1,3 +1,5 @@
+import io
+
 import streamlit as st
 from StreamlitUI.src.ArrowClient.arrow_client import arrow_duckdb_client
 
@@ -15,10 +17,6 @@ def get_available_tables():
     st.dataframe(df, height=150)
 
 
-#TODO: CLEAN UP DATA FORMAT IN F1DataLOader. Too complicated figuring out paths and shit.
-#TODO: Make a config_files file
-#TODO: Make a LOGGER.
-#TODO: ability to view virtual tables, download them as parquet file or .duckdb?
 def sql_explorer():
     query = st.text_area("Enter SQL")
     # query = st_ace(language="sql", height=200)
@@ -26,43 +24,22 @@ def sql_explorer():
         try:
             df = arrow_duckdb_client.execute(query)
             st.dataframe(df, height=150)
-            # df.to_html does not work well for large dataframes. It complains about memory issues.
-            # st.dataframe does not display timedelta [ns] correctly
 
-            # df_html = df.to_html(index=False, escape=False)
-            # st.markdown(html_code + df_html, unsafe_allow_html=True)
+            if not df.empty:
+                st.download_button(label="Download .parquet",
+                                   data=write_parquet_to_buffer(df),
+                                   file_name="data.parquet",
+                                   mime="application/octet-stream")
+
         except Exception as e:
             print(e)
 
 
-# TODO: clean this up.
-# Custom CSS for word-wrapping with fixed width
-html_code = """
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: Arial, sans-serif;
-    }
-    th, td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        text-align: left;
-        vertical-align: top;  /* Ensures text stays at the top */
-        white-space: normal;  /* Allows text wrapping */
-        word-wrap: break-word; /* Forces text to break if too long */
-        max-width: 200px;  /* Restricts width to prevent stretching */
-        overflow-wrap: break-word; /* Alternative wrapping for extra support */
-    }
-    th {
-        background-color: #4CAF50;
-        color: white;
-    }
-    tr:hover {
-        background-color: #f5f5f5;
-    }
-</style>
-"""
+def write_parquet_to_buffer(df):
+    buffer = io.BytesIO()
+    df.to_parquet(buffer, engine='pyarrow')
+    buffer.seek(0)
+    return buffer
 
 
 def main():

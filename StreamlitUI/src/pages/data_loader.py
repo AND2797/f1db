@@ -23,7 +23,7 @@ def main():
                                                                                           required=True)})
     if st.button("Load"):
         request["Race"] = request["Race"].str.lower()
-        request["Race"] = request["Race"].str.replace('', '_')
+        request["Race"] = request["Race"].str.replace(' ', '_')
         load_data(request)
 
 

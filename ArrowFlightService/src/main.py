@@ -38,7 +38,6 @@ class FlightServer(pa.flight.FlightServerBase):
         action_body = action.body.to_pybytes().decode()
 
         if action_type == "attach_new_table":
-            print("in attach_new_table")
             data_dict = json.loads(action_body)
             data_source_info = pd.DataFrame(data_dict)
             attach_db_to_conn(self.conn, data_source_info)
