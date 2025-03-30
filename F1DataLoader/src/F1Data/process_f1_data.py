@@ -95,6 +95,7 @@ def get_all_telemetry(laps):
     for index, each_lap in laps.iterrows():
         try:
             telemetry = each_lap.get_telemetry()
+            #TODO: check if data is getting added correctly?
             telemetry["Driver"] = each_lap["Driver"]
             telemetry["DriverNumber"] = each_lap["DriverNumber"]
             telemetry["LapNumber"] = each_lap["LapNumber"]
