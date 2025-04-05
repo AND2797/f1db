@@ -5,6 +5,11 @@ import pandas as pd
 import json
 from ArrowFlightService.src.DuckDB.data import discover_duckdb_sources
 from ArrowFlightService.src.DuckDB.duckdb_processor import attach_db_to_conn
+from ArrowFlightService.src.AppUtils.logger_utils import setup_logger
+from ArrowFlightService.src.AppUtils.config_utils import get_property
+
+logger = setup_logger(get_property("App", "log_file"))
+
 
 
 class FlightServer(pa.flight.FlightServerBase):
@@ -40,6 +45,7 @@ class FlightServer(pa.flight.FlightServerBase):
         if action_type == "attach_new_table":
             data_dict = json.loads(action_body)
             data_source_info = pd.DataFrame(data_dict)
+            logger.info(data_source_info)
             attach_db_to_conn(self.conn, data_source_info)
 
 

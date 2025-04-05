@@ -1,10 +1,13 @@
 import pandas as pd
 from F1DataLoader.src.AppUtils.config_utils import get_property
+from F1DataLoader.src.AppUtils.logger_utils import setup_logger
 from F1DataLoader.src.parquet_utils import write_parquet
 from F1DataLoader.src.DuckDB.duckdb_utils import create_duckdb_table
 from F1DataLoader.src.F1Data.f1_data_access import get_session_data
 import os
 from pathlib import Path
+
+logger = setup_logger(get_property("App", "log_file"))
 
 
 class F1DataRequest:
@@ -34,23 +37,28 @@ class F1DataRequest:
         session = session_info["Type"]
 
         laps_df = self.session_data.laps.copy()
-        laps_df['Year'] = year
+        laps_df['year'] = year
         # race != country
-        laps_df['Race'] = race
-        laps_df['Session'] = session
+        laps_df['race'] = race
+        laps_df['session'] = session
+        laps_df.columns = (laps_df.columns
+                             .str.replace('(?<=[a-z])(?=[A-Z])', '_', regex=True)
+                             .str.lower())
         laps_df = timedelta_to_seconds(laps_df)
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(laps_df, file_path)
         create_duckdb_table(laps_df, "laps", str(self.db_path))
+        logger.info(f"Completed writing laps data")
 
     def write_telemetry_data(self):
         telemetry_df = process_telemetry_data(self.year, self.race, self.session,
                                               self.session_data)
 
-        file_name = f"laps_{self.session.lower()}_{self.year}.parquet"
+        file_name = f"telemetry_{self.session.lower()}_{self.year}.parquet"
         file_path = self.raw_data_dir.joinpath(file_name)
         write_parquet(telemetry_df, file_path)
         create_duckdb_table(telemetry_df, "telemetry", str(self.db_path))
+        logger.info(f"Completed writing telemetry data")
 
     def write_session_data(self):
         self.write_laps_data()
@@ -64,29 +72,17 @@ def process_telemetry_data(year, race, session, session_data):
         laps = session_data.laps.pick_drivers(driver)
         telemetry = get_all_telemetry(laps)
         # streamlit is unable to render timedelta[ns]. converting it to seconds
-        telemetry["Driver"] = driver
-        telemetry['Year'] = year
-        telemetry['Race'] = race
-        telemetry['Session'] = session
+        telemetry['year'] = year
+        telemetry['race'] = race.lower()
+        telemetry['session'] = session.lower()
+        telemetry.columns = (telemetry.columns
+                             .str.replace('(?<=[a-z])(?=[A-Z])', '_', regex=True)
+                             .str.lower())
         telemetry = timedelta_to_seconds(telemetry)
         all_telemetry.append(telemetry)
 
     all_telemetry_df = pd.concat(all_telemetry)
     return all_telemetry_df
-
-
-def write_session_data(year, race, session):
-    # TODO: need to clean this up, passing same variables around
-    session_data = get_session_data(year, race, session)
-    write_laps_data_for_session(year, race, session, session_data)
-    write_telemetry_for_session(year, race, session, session_data)
-    data_path = get_data_path(year, race, session)
-    # TODO: need to find a way to not reconstruct the db path again and again.
-    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
-    db_path = os.path.join(data_path, db)
-    attach_as = f"{race.lower()}_{session.lower()}_{year}"
-    db_info = pd.DataFrame(columns=['path', 'attach_as'], data=[[db_path, attach_as]])
-    return db_info
 
 
 def get_all_telemetry(laps):
@@ -107,62 +103,6 @@ def get_all_telemetry(laps):
 
     telemetry_df = pd.concat(telemetry_list)
     return telemetry_df
-
-
-def write_telemetry_for_session(year, race, session, session_data):
-    drivers = session_data.drivers
-    all_telemetry = []
-    data_path = get_data_path(year, race, session)
-    data_path.mkdir(parents=True, exist_ok=True)
-    for driver in drivers:
-        laps = session_data.laps.pick_drivers(driver)
-        telemetry = get_all_telemetry(laps)
-        # streamlit is unable to render timedelta[ns]. converting it to seconds
-        # telemetry['SessionTime'] = telemetry['SessionTime'].dt.total_seconds()
-        # telemetry['Time'] = telemetry['Time'].dt.total_seconds()
-        telemetry["Driver"] = driver
-        telemetry['Year'] = year
-        telemetry['Race'] = race
-        telemetry['Session'] = session
-        # telemetry_file = data_path.joinpath(f"{driver}_telemetry.parquet")
-        # write_parquet(telemetry, telemetry_file)
-        telemetry = timedelta_to_seconds(telemetry)
-        all_telemetry.append(telemetry)
-
-    all_telemetry_df = pd.concat(all_telemetry)
-    if session.lower() == "q" or session.lower() == "qualifying" or session.lower() == "qualy":
-        session = "qualifying"
-    elif session.lower() == "r" or session.lower() == "race":
-        session = "race"
-    parquet_dir = data_path.joinpath("raw")
-    parquet_dir.mkdir(parents=True, exist_ok=True)
-    parquet_file_path = parquet_dir.joinpath(f"telemetry_{session.lower()}_{year}.parquet")
-    write_parquet(all_telemetry_df, parquet_file_path)
-    table_name = f"telemetry"
-    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
-    db_path = data_path.joinpath(f"{db}")
-    create_duckdb_table(all_telemetry_df, table_name, str(db_path))
-    print("done telemetry")
-
-
-def write_laps_data_for_session(year, race, session, session_data):
-    data_path = get_data_path(year, race, session)
-    data_path.mkdir(parents=True, exist_ok=True)
-    parquet_dir = data_path.joinpath("raw")
-    parquet_dir.mkdir(parents=True, exist_ok=True)
-    parquet_file_path = parquet_dir.joinpath(f"laps_{session.lower()}_{year}.parquet")
-    laps_df = session_data.laps.copy()
-    laps_df['Year'] = year
-    laps_df['Race'] = race
-    laps_df['Session'] = session
-    laps_df = timedelta_to_seconds(laps_df)
-    # convert timedelta
-    write_parquet(laps_df, parquet_file_path)
-    table_name = f"laps"
-    db = f"{race.lower()}_{session.lower()}_{year}.duckdb"
-    db_path = data_path.joinpath(f"{db}")
-    create_duckdb_table(laps_df, table_name, str(db_path))
-    print("done laps")
 
 
 def get_data_path(year, race, session):
@@ -186,7 +126,7 @@ def timedelta_to_seconds(df):
 
 
 if __name__ == '__main__':
-    write_telemetry_for_session(2024, 'Mexico', 'Race')
+    pass
     # session = get_session_data(2024, 'Monaco', 'Q')
     # laps = session.laps.pick_drivers(23)
     # tele = laps.get_telemetry()
