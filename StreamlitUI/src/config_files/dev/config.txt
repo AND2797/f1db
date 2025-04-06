@@ -1,0 +1,4 @@
+[App]
+log_file=
+flight_server=grpc://0.0.0.0:8815
+data_loader_server=http://localhost:8000

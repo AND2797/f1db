@@ -1,0 +1,3 @@
+[App]
+log_file=/Users/aditya/Projects/projects_data/logs/arrow_flight_service.log
+data_root=/Users/aditya/Projects/projects_data/f1db
