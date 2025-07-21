@@ -16,7 +16,8 @@ class F1DataRequest:
         self.race = race
         self.session = session
         self.duck_table = f"{race.lower()}_{session.lower()}_{year}.duckdb"
-        self.data_root = Path(get_property("App", "output_root"))
+        # TODO: move property calls to their own utils file
+        self.data_root = Path(get_property("App", "data_root"))
         self.data_dir = self.data_root.joinpath(f"{year}", f"{race.lower()}", f"{session.lower()}")
         self.raw_data_dir = self.data_dir.joinpath("raw")
         self.data_dir.mkdir(parents=True, exist_ok=True)
