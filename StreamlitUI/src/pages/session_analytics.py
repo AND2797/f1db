@@ -1,6 +1,6 @@
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
+import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import pandas as pd
 from StreamlitUI.src.ArrowClient.arrow_client import arrow_duckdb_client
@@ -176,22 +176,26 @@ def main():
                 # Display the plot in Streamlit
                 points = st.plotly_chart(fig, use_container_width=True, selection_mode="points", on_select='rerun')
 
+                points_to_plot = [[record['x'], record['legendgroup']] for record in points['selection']['points']]
+                where_clauses = " OR ".join(
+                    [f"(driver = '{driver}' AND lap_number = {lap})" for lap,driver in points_to_plot]
+                )
                 # plot telemetry based on selection
                 driver = points['selection']['points'][0]['legendgroup']
                 lap_num = points['selection']['points'][0]['x']
                 telemetry_query = f"""
                 SELECT * FROM {option}.telemetry
-                WHERE driver IN ('{driver}') AND lap_number={lap_num}
+                WHERE {where_clauses}
                 """
                 tele_df = arrow_duckdb_client.execute(telemetry_query)
                 print(tele_df.columns)
-
-                fig = px.line(tele_df, 'distance', 'speed', color='driver')
+                # TODO: make it work for multiple drivers
+                # TODO: interpolate distance
                 fig = make_subplots(rows=4, cols=1, shared_xaxes=True)
-                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['speed']), row=1, col=1)
-                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['throttle']), row=2, col=1)
-                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['rpm']), row=3, col=1)
-                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['brake']), row=4, col=1)
+                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['speed'], mode='lines'), row=1, col=1)
+                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['throttle'], mode='lines'), row=2, col=1)
+                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['rpm'], mode='lines'), row=3, col=1)
+                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['brake'], mode='lines'), row=4, col=1)
                 fig.update_layout(height=900, showlegend=False)
                 fig.update_xaxes(showgrid=True)
                 fig.update_yaxes(showgrid=True)
@@ -206,7 +210,6 @@ def main():
 
             except Exception as e:
                 pass
-
 
 
 if __name__ == '__main__':
