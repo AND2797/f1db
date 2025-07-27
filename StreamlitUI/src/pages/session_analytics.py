@@ -193,8 +193,8 @@ def main():
                 fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['rpm']), row=3, col=1)
                 fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['brake']), row=4, col=1)
                 fig.update_layout(height=900, showlegend=False)
-                fig.update_xaxes(showgrid=True, gridwidth=1)
-                fig.update_yaxes(showgrid=True, gridwidth=1)
+                fig.update_xaxes(showgrid=True)
+                fig.update_yaxes(showgrid=True)
                 # Update layout for better readability
                 # fig.update_layout(
                 #     xaxis_title="Distance",
@@ -202,7 +202,7 @@ def main():
                 #     hovermode="closest",
                 #     margin=dict(l=40, r=40, t=40, b=40)
                 # )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig)
 
             except Exception as e:
                 pass
