@@ -1,7 +1,10 @@
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd
 from StreamlitUI.src.ArrowClient.arrow_client import arrow_duckdb_client
+from streamlit_plotly_events import plotly_events
 
 
 # box plot of driver lap times
@@ -70,7 +73,7 @@ def main():
             # Fetch the entire lap data for selected drivers first to determine min/max laps
             drivers_tuple = tuple(selected_drivers)
             if len(selected_drivers) == 1:
-                query_drivers = f"'{selected_drivers[0]}'"
+                query_drivers = f"('{selected_drivers[0]}')"
             else:
                 query_drivers = str(drivers_tuple)
 
@@ -138,7 +141,72 @@ def main():
             st.info("Please select at least one driver to display the violin plot.")
 
     with telemetry:
-        pass
+        # Multiselect for Drivers
+        selected_drivers = st.multiselect("Select Drivers 2", st.session_state['driver_list'])
+
+        df_laps = None # Initialize df_laps outside the conditional block
+
+        if selected_drivers:
+            # Fetch the entire lap data for selected drivers first to determine min/max laps
+            drivers_tuple = tuple(selected_drivers)
+            if len(selected_drivers) == 1:
+                query_drivers = f"('{selected_drivers[0]}')"
+            else:
+                query_drivers = str(drivers_tuple)
+
+            # Query all laps for selected drivers to determine min/max for the slider
+            initial_data_query = f"""
+            SELECT driver, lap_number, lap_time
+            FROM {option}.laps
+            WHERE driver IN {query_drivers}
+            """
+
+            try:
+                full_df_laps = arrow_duckdb_client.execute(initial_data_query)
+                fig = px.scatter(full_df_laps, 'lap_number', 'lap_time', color='driver')
+                # Update layout for better readability
+                fig.update_layout(
+                    xaxis_title="Lap Number",
+                    yaxis_title="Lap Time (s)",
+                    hovermode="closest",
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                fig.update_traces(marker=dict(size=15))
+
+                # Display the plot in Streamlit
+                points = st.plotly_chart(fig, use_container_width=True, selection_mode="points", on_select='rerun')
+
+                # plot telemetry based on selection
+                driver = points['selection']['points'][0]['legendgroup']
+                lap_num = points['selection']['points'][0]['x']
+                telemetry_query = f"""
+                SELECT * FROM {option}.telemetry
+                WHERE driver IN ('{driver}') AND lap_number={lap_num}
+                """
+                tele_df = arrow_duckdb_client.execute(telemetry_query)
+                print(tele_df.columns)
+
+                fig = px.line(tele_df, 'distance', 'speed', color='driver')
+                fig = make_subplots(rows=4, cols=1, shared_xaxes=True)
+                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['speed']), row=1, col=1)
+                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['throttle']), row=2, col=1)
+                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['rpm']), row=3, col=1)
+                fig.add_trace(go.Line(x=tele_df['distance'], y=tele_df['brake']), row=4, col=1)
+                fig.update_layout(height=900, showlegend=False)
+                fig.update_xaxes(showgrid=True, gridwidth=1)
+                fig.update_yaxes(showgrid=True, gridwidth=1)
+                # Update layout for better readability
+                # fig.update_layout(
+                #     xaxis_title="Distance",
+                #     yaxis_title="Speed",
+                #     hovermode="closest",
+                #     margin=dict(l=40, r=40, t=40, b=40)
+                # )
+                st.plotly_chart(fig, use_container_width=True)
+
+            except Exception as e:
+                pass
+
 
 
 if __name__ == '__main__':
