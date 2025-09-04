@@ -1,25 +1,13 @@
 # f1db: Historical F1 Data platform
 
-What?
-This project will let you build your own persistent F1 database. 
+The aim of this project is to setup a persistent historical f1 database for race telemetry data and explore data
+using SQL. 
 
-Why?
-- This setup lets you create data sets for any F1 race (provided FastF1 can get it for you) without having to re-write FastF1 API code.
-- A better experience exploring data with the help of native SQL (backed by DuckDB)
-- Easy to view data across multiple sessions, years with the help of SQL joins 
+The project has 3 pieces
+- F1DataLoader - A REST service that fetches data from FastF1 and dumps it in parquet files. It creates persistent .duckdb databases from the parquet files
+- ArrowFlightService - An ArrowFlightServer that links the .duckdb databases with the UI.
+- Streamlit UI - A UI which provides some rudimentary analytics and allows exploring various datasets using SQL
 
-How?
-The project has 3 pieces - 
-- F1DataLoader - Fetches data from FastF1 and dump it in parquet files and create persistent .duckdb databases
-- ArrowFlightService - Spins up an ArrowFlightServer that exposes .duckdb databases created by F1DataLoader
-- Streamlit UI - Just a UI for running SQL queries and viewing available datasets
 
-# TODO:
-[ ] implement logging
-
-[ ] implement a config
-
-[ ] Load a dataset for entire season 
-
-[ ] start playing with some data !!
+The motivation of this project was to have something like a queryable database of F1 telemetry for custom analysis.
 
