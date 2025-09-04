@@ -2,9 +2,9 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import pandas as pd
-from StreamlitUI.src.ArrowClient.arrow_client import arrow_duckdb_client
-from streamlit_plotly_events import plotly_events
+from StreamlitUI.src.Arrow.arrow_client import arrow_duckdb_client
+from StreamlitUI.src.Analytics.driver_consistency_plots import make_consistency_plot, get_lap_query
+from StreamlitUI.src.Analytics.telemetry_plots import plot_laps, get_telemetry_query, plot_telemetry
 
 
 # box plot of driver lap times
@@ -65,153 +65,47 @@ def main():
     driver_consistency, telemetry = st.tabs(["Driver Consistency", "Telemetry"])
     with driver_consistency:
         # Multiselect for Drivers
-        selected_drivers = st.multiselect("Select Drivers", st.session_state['driver_list'])
+        drivers = st.multiselect("Select Drivers", st.session_state['driver_list'])
 
-        df_laps = None # Initialize df_laps outside the conditional block
+        lap_data_query = get_lap_query(option, drivers)
+        try:
+            full_df_laps = arrow_duckdb_client.execute(lap_data_query)
+            fig = make_consistency_plot(full_df_laps)
 
-        if selected_drivers:
-            # Fetch the entire lap data for selected drivers first to determine min/max laps
-            drivers_tuple = tuple(selected_drivers)
-            if len(selected_drivers) == 1:
-                query_drivers = f"('{selected_drivers[0]}')"
-            else:
-                query_drivers = str(drivers_tuple)
-
-            # Query all laps for selected drivers to determine min/max for the slider
-            initial_data_query = f"""
-            SELECT driver, lap_number, lap_time
-            FROM {option}.laps
-            WHERE driver IN {query_drivers}
-            """
-
-            try:
-                full_df_laps = arrow_duckdb_client.execute(initial_data_query)
-
-                if not full_df_laps.empty:
-                    # Determine min and max lap numbers for the slider
-                    min_lap = int(full_df_laps['lap_number'].min())
-                    max_lap = int(full_df_laps['lap_number'].max())
-
-                    # Create a slider for lap range
-                    lap_range = st.slider(
-                        "Select Lap Range",
-                        min_value=min_lap,
-                        max_value=max_lap,
-                        value=(min_lap, max_lap), # Default to the full range
-                        step=1
-                    )
-
-                    # Filter the DataFrame based on the selected lap range
-                    df_laps = full_df_laps[
-                        (full_df_laps['lap_number'] >= lap_range[0]) &
-                        (full_df_laps['lap_number'] <= lap_range[1])
-                    ]
-
-                    if not df_laps.empty:
-                        # Create the violin plot using Plotly Express
-                        fig = px.violin(
-                            df_laps,
-                            x="driver",
-                            y="lap_time",
-                            color="driver",
-                            box=True,  # Optionally show a box plot inside the violin
-                            points="all", # Optionally show all points
-                            title=f"Driver Lap Time Consistency (Laps {lap_range[0]} - {lap_range[1]})",
-                            labels={"lap_time": "Lap Time (seconds)", "driver": "Driver"}
-                        )
-
-                        # Update layout for better readability
-                        fig.update_layout(
-                            xaxis_title="Driver",
-                            yaxis_title="Lap Time",
-                            hovermode="closest",
-                            margin=dict(l=40, r=40, t=40, b=40)
-                        )
-
-                        # Display the plot in Streamlit
-                        st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.info(f"No lap data available for the selected drivers within laps {lap_range[0]} - {lap_range[1]}.")
-                else:
-                    st.info("No lap data available for the selected drivers in this dataset.")
-            except Exception as e:
-                st.error(f"Error fetching data: {e}")
-                st.error("Please ensure the selected dataset and drivers are valid and accessible.")
+            # Display the plot in Streamlit
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error fetching data: {e}")
+            st.error("Please ensure the selected dataset and drivers are valid and accessible.")
         else:
             st.info("Please select at least one driver to display the violin plot.")
 
     with telemetry:
         # Multiselect for Drivers
-        selected_drivers = st.multiselect("Select Drivers 2", st.session_state['driver_list'])
+        drivers = st.multiselect("Select Drivers Telemetry", st.session_state['driver_list'])
 
-        df_laps = None # Initialize df_laps outside the conditional block
+        lap_data_query = get_lap_query(option, drivers)
+        try:
+            df_laps = arrow_duckdb_client.execute(lap_data_query)
+            fig = plot_laps(df_laps)
+            # fig = make_telemetry_plot(df)
+            points = st.plotly_chart(fig, use_container_width=True, selection_mode="points", on_select='rerun')
+            points_to_plot = [[record['x'], record['legendgroup']] for record in points['selection']['points']]
 
-        if selected_drivers:
-            # Fetch the entire lap data for selected drivers first to determine min/max laps
-            drivers_tuple = tuple(selected_drivers)
-            if len(selected_drivers) == 1:
-                query_drivers = f"('{selected_drivers[0]}')"
-            else:
-                query_drivers = str(drivers_tuple)
-
-            # Query all laps for selected drivers to determine min/max for the slider
-            initial_data_query = f"""
-            SELECT driver, lap_number, lap_time
-            FROM {option}.laps
-            WHERE driver IN {query_drivers}
-            """
-
-            try:
-                full_df_laps = arrow_duckdb_client.execute(initial_data_query)
-                fig = px.scatter(full_df_laps, 'lap_number', 'lap_time', color='driver')
-                # Update layout for better readability
-                fig.update_layout(
-                    xaxis_title="Lap Number",
-                    yaxis_title="Lap Time (s)",
-                    hovermode="closest",
-                    margin=dict(l=40, r=40, t=40, b=40)
-                )
-                fig.update_traces(marker=dict(size=15))
-
-                # Display the plot in Streamlit
-                points = st.plotly_chart(fig, use_container_width=True, selection_mode="points", on_select='rerun')
-
-                points_to_plot = [[record['x'], record['legendgroup']] for record in points['selection']['points']]
-                where_clauses = " OR ".join(
-                    [f"(driver = '{driver}' AND lap_number = {lap})" for lap,driver in points_to_plot]
-                )
-                # plot telemetry based on selection
-                driver = points['selection']['points'][0]['legendgroup']
-                lap_num = points['selection']['points'][0]['x']
-                telemetry_query = f"""
-                SELECT * FROM {option}.telemetry
-                WHERE {where_clauses}
-                """
-                tele_df = arrow_duckdb_client.execute(telemetry_query)
-                print(tele_df.columns)
-                # TODO: make it work for multiple drivers
-                # TODO: interpolate distance
-                fig = make_subplots(rows=4, cols=1, shared_xaxes=True)
-                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['speed'], mode='lines'), row=1, col=1)
-                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['throttle'], mode='lines'), row=2, col=1)
-                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['rpm'], mode='lines'), row=3, col=1)
-                fig.add_trace(go.Scatter(x=tele_df['distance'], y=tele_df['brake'], mode='lines'), row=4, col=1)
-                fig.update_layout(height=900, showlegend=False)
-                fig.update_xaxes(showgrid=True)
-                fig.update_yaxes(showgrid=True)
-                # Update layout for better readability
-                # fig.update_layout(
-                #     xaxis_title="Distance",
-                #     yaxis_title="Speed",
-                #     hovermode="closest",
-                #     margin=dict(l=40, r=40, t=40, b=40)
-                # )
-                st.plotly_chart(fig)
-
-            except Exception as e:
-                pass
-
+            # driver = points['selection']['points'][0]['legendgroup']
+            # lap_num = points['selection']['points'][0]['x']
+            where_clauses = " OR ".join(
+                [f"(driver = '{driver}' AND lap_number = {lap})" for lap, driver in points_to_plot]
+            )
+            query = get_telemetry_query(option, where_clauses)
+            df_tele = arrow_duckdb_client.execute(query)
+            fig = plot_telemetry(df_tele)
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.error(f"Error fetching data: {e}")
+            st.error("Please ensure the selected dataset and drivers are valid and accessible.")
+        else:
+            st.info("Please select at least one driver to display the violin plot.")
 
 if __name__ == '__main__':
-    # Ensure arrow_duckdb_client is initialized or accessible
     main()
