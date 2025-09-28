@@ -7,7 +7,7 @@ class FastF1:
         pass
 
     @staticmethod
-    def get_session(self, year, race, session, **kwargs):
+    def get_session(year, race, session, **kwargs):
         session = fastf1.get_session(year, race, session)
 
         telemetry = kwargs.get('telemetry', False)
