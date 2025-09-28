@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from F1Data.f1_data_access import F1DataRequest
-from F1Data.data_processor import F1DataProcessor
+from F1Data.access_data import F1DataRequest
+from F1Data.process_data import F1DataProcessor
 from F1DataLoader.src.Parquet.parquet_facade import ParquetFacade
 from AppUtils.logger_utils import setup_logger
 from AppUtils.config_utils import get_property
