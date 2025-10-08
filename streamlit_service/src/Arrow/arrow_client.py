@@ -1,5 +1,5 @@
 import pyarrow.flight as flight
-from StreamlitUI.src.AppUtils.config_utils import get_property
+from streamlit_service.src.AppUtils.config_utils import get_property
 
 
 class ArrowDuckDBClient:

@@ -1,0 +1,8 @@
+<query name="lap_data_query">
+  <![CDATA[
+    SELECT driver, lap_number, lap_time
+    FROM {race}.laps
+    WHERE driver IN {drivers}
+  ]]>
+</query>
+

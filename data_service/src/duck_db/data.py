@@ -2,7 +2,7 @@ import os
 import glob
 import pandas as pd
 from pathlib import Path
-from ArrowFlightService.src.AppUtils.config_utils import get_property
+from data_service.src.app_utils.config_utils import get_property
 
 
 def discover_duckdb_sources():

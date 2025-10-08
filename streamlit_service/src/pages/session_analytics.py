@@ -2,9 +2,9 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-from StreamlitUI.src.Arrow.arrow_client import arrow_duckdb_client
-from StreamlitUI.src.Analytics.driver_consistency_plots import make_consistency_plot, get_lap_query
-from StreamlitUI.src.Analytics.telemetry_plots import plot_laps, get_telemetry_query, plot_telemetry
+from streamlit_service.src.Arrow.arrow_client import arrow_duckdb_client
+from streamlit_service.src.Analytics.driver_consistency_plots import make_consistency_plot, get_lap_query
+from streamlit_service.src.Analytics.telemetry_plots import plot_laps, get_telemetry_query, plot_telemetry
 
 
 # box plot of driver lap times

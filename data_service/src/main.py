@@ -3,10 +3,10 @@ import pyarrow as pa
 import pyarrow.flight as flight
 import pandas as pd
 import json
-from ArrowFlightService.src.DuckDB.data import discover_duckdb_sources
-from ArrowFlightService.src.DuckDB.duckdb_processor import attach_db_to_conn
-from ArrowFlightService.src.AppUtils.logger_utils import setup_logger
-from ArrowFlightService.src.AppUtils.config_utils import get_property
+from data_service.src.duck_db.data import discover_duckdb_sources
+from data_service.src.duck_db.client import attach_db_to_conn
+from data_service.src.app_utils.logger_utils import setup_logger
+from data_service.src.app_utils.config_utils import get_property
 
 logger = setup_logger(get_property("App", "log_file"))
 

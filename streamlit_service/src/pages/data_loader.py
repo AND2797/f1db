@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
 import fastf1 as f1
-from StreamlitUI.src.F1DataLoaderRest.client import F1DataLoaderClient
-from StreamlitUI.src.AppUtils.config_utils import get_property
-from StreamlitUI.src.AppUtils.logger_utils import setup_logger
+from streamlit_service.src.F1DataLoaderRest.client import F1DataLoaderClient
+from streamlit_service.src.AppUtils.config_utils import get_property
+from streamlit_service.src.AppUtils.logger_utils import setup_logger
 
 logger = setup_logger(get_property("App", "log_file"))
 

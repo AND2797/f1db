@@ -2,9 +2,9 @@ from fastapi import FastAPI
 
 from F1Data.access_data import F1DataRequest
 from F1Data.process_data import F1DataProcessor
-from F1DataLoader.src.Parquet.parquet_facade import ParquetFacade
-from AppUtils.logger_utils import setup_logger
-from AppUtils.config_utils import get_property
+from f1_data_service.src.Parquet.parquet_facade import ParquetFacade
+from app_utils.logger_utils import setup_logger
+from app_utils.config_utils import get_property
 
 
 app = FastAPI()
@@ -23,7 +23,7 @@ def load_session_data(year: int, race, session):
                 'weather': True}
     request.load_session(**optional)
 
-    processor = F1DataProcessor(request, ParquetFacade(), dict()) #TODO: pass DuckDB
+    processor = F1DataProcessor(request, ParquetFacade(), dict()) #TODO: pass duck_db
     processor.write_session_data()
 
     # processor.attach_tables()

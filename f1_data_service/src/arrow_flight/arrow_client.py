@@ -9,7 +9,7 @@ class ArrowDuckDBClient:
 
     def attach_new_table(self, json):
         """
-        When a new .duckb table is created via dataloader, this call will get invoked to update the ArrowFlight source
+        When a new .duckb table is created via dataloader, this call will get invoked to update the arrow_flight source
         :param json:
         :return:
         """
