@@ -1,3 +1,0 @@
-[App]
-log_file=
-output_root=
