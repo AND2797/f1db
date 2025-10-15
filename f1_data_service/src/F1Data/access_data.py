@@ -15,13 +15,15 @@ def get_laps(year, race, session):
 class F1DataRequest:
     def __init__(self, year, race, session):
         self.year = year
-        self.race = race
+        self.race = race.replace(' ', '_').lower()
         self.session = session
+        # TODO: i think just use the library directly. otherwise we may have to implement a lot of functionality
         self._f1client = FastF1()
         self.session_data = None
 
     def load_session(self, **kwargs):
         self.session_data = self._f1client.get_session(self.year, self.race, self.session, **kwargs)
+
 
 
 

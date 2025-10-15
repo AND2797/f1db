@@ -15,7 +15,7 @@ class F1DataProcessor:
         self.session_data = self.data_request.session_data
         self.duckdb = db
         self._pqf = pqf
-        self.data_root = self._construct_path(self.data_request)
+        self.data_root = self._create_data_dir(self.data_request)
 
     def _get_laps(self):
         # helper to get laps?
@@ -108,12 +108,13 @@ class F1DataProcessor:
         telemetry = pd.concat(telemetry_list)
         return telemetry
 
-    def _construct_path(self, f1dr: F1DataRequest):
+    def _create_data_dir(self, f1dr: F1DataRequest):
         base_path = Path(get_property("App", "data_root"))
         year = self.data_request.year
         race = self.data_request.race.lower()
         session = self.data_request.session.lower()
-        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session}")
+        # TODO: fix these one off string formattings. need a system for consistent string formatting
+        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session.replace(' ', '_').lower()}")
         session_path.mkdir(parents=True, exist_ok=True)
         session_path.joinpath('telemetry').mkdir(parents=True, exist_ok=True)
         return session_path
