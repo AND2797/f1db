@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional, List
+import asyncio
 
 from f1_data.access_data import F1DataRequest
 from f1_data.process_data import F1DataProcessor
@@ -20,13 +21,16 @@ class SessionLoadRequest(BaseModel):
 
 
 @app.post("/session/load")
-def load_session_data(session_load_requests: List[SessionLoadRequest]):
-    for req in session_load_requests:
-        try:
-            data_request = load_data(req)
-            process_data(data_request)
-        except Exception as e:
-            logger.error(e)
+async def load_session_data(session_load_requests: List[SessionLoadRequest]):
+    tasks = [
+        asyncio.to_thread(process_request, req) for req in session_load_requests
+    ]
+    await asyncio.gather(*tasks)
+    return {"message": f"Successfully processed {len(session_load_requests)} session load requests."}
+
+def process_request(request: SessionLoadRequest):
+    data_request = load_data(request)
+    process_data(data_request)
 
 def load_data(request: SessionLoadRequest) -> F1DataRequest:
     year = request.year
