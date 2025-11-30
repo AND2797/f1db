@@ -1,5 +1,0 @@
-[App]
-log_file=/Users/aditya/Projects/projects_data/logs/UI.log
-data_root=/Users/aditya/Projects/projects_data/f1db
-flight_server=grpc://0.0.0.0:8815
-data_loader_server=http://localhost:8000
