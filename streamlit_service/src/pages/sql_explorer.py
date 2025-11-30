@@ -1,7 +1,7 @@
 import io
 
 import streamlit as st
-from streamlit_service.src.Arrow.ArrowClient import arrow_duckdb_client
+from streamlit_service.src.Arrow.arrow_client import arrow_duckdb_client
 
 
 def get_available_tables():

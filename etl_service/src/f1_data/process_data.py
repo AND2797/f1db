@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
-from f1_data_service.src.F1Data.access_data import F1DataRequest
-from f1_data_service.src.app_utils.config_utils import get_property
+from etl_service.src.f1_data.access_data import F1DataRequest
+from etl_service.src.app_utils.config_utils import get_property
 
 
 class F1DataProcessor:
@@ -32,7 +32,6 @@ class F1DataProcessor:
         laps = self.post_process_laps(laps)
 
         self._pqf.write(laps, self.data_root.joinpath("laps.parquet"))
-        # self.duckdb.create_table(path, laps, "laps")
 
     def write_telemetry_by_driver(self):
         drivers = self.session_data.laps['Driver'].unique()
@@ -61,41 +60,6 @@ class F1DataProcessor:
         laps = timedel_to_seconds(laps)
         return laps
 
-    def write_telemetry(self, path):
-        # TODO: Implement this
-        df = self.combine_telemetry()
-        self._pqf.write(path, df)
-        self.duckdb.create_table(path, df, "telemetry")
-
-        # TODO: think about whether data needs to be interpolated
-        # interp_df = self.interpolate_telemetry_data(df)
-        # self._pqf.write(path, df)
-        # self._db.create_table(path, df, "telemetry")
-        # self._db.create_table(path, interp_df, "telemetry")
-
-
-    # def combine_telemetry(self):
-    #     if self.session is None:
-    #         return pd.DataFrame()
-    #
-    #     drivers = self.session.drivers
-    #     combined_telemetry = []
-    #     for driver in drivers:
-    #         laps = self.session.laps.pick_drivers(driver)
-    #         telemetry = self.get_all_telemetry(laps)
-    #
-    #         telemetry['year'] = self.session.year
-    #         telemetry['race'] = self.session.race.lower()
-    #         telemetry['session'] = self.session
-    #         telemetry.columns = (telemetry.columns
-    #                          .str.replace('(?<=[a-z])(?=[A-Z])', '_', regex=True)
-    #                          .str.lower())
-    #         telemetry = timedel_to_seconds(telemetry)
-    #         combined_telemetry.append(telemetry)
-    #
-    #     combined_df = pd.concat(combined_telemetry)
-    #     return combined_df
-
     def get_all_telemetry(self, laps):
         telemetry_list = []
         for index, lap in laps.iterrows():
@@ -111,10 +75,10 @@ class F1DataProcessor:
     def _create_data_dir(self, f1dr: F1DataRequest):
         base_path = Path(get_property("App", "data_root"))
         year = self.data_request.year
-        race = self.data_request.race.lower()
-        session = self.data_request.session.lower()
+        race = self.data_request.race.lower().replace(' ', '_')
+        session = self.data_request.session.lower().replace(' ', '_')
         # TODO: fix these one off string formattings. need a system for consistent string formatting
-        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session.replace(' ', '_').lower()}")
+        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session}")
         session_path.mkdir(parents=True, exist_ok=True)
         session_path.joinpath('telemetry').mkdir(parents=True, exist_ok=True)
         return session_path
