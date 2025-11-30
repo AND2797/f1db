@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
-from F1Data.access_data import F1DataRequest
-from F1Data.process_data import F1DataProcessor
-from f1_data_service.src.Parquet.parquet_facade import ParquetFacade
+from f1_data.access_data import F1DataRequest
+from f1_data.process_data import F1DataProcessor
+from etl_service.src.parquet.parquet_facade import ParquetFacade
 from app_utils.logger_utils import setup_logger
 from app_utils.config_utils import get_property
 

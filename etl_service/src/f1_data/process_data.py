@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
-from f1_data_service.src.F1Data.access_data import F1DataRequest
-from f1_data_service.src.app_utils.config_utils import get_property
+from etl_service.src.f1_data.access_data import F1DataRequest
+from etl_service.src.app_utils.config_utils import get_property
 
 
 class F1DataProcessor:
@@ -60,41 +60,6 @@ class F1DataProcessor:
 
         laps = timedel_to_seconds(laps)
         return laps
-
-    def write_telemetry(self, path):
-        # TODO: Implement this
-        df = self.combine_telemetry()
-        self._pqf.write(path, df)
-        self.duckdb.create_table(path, df, "telemetry")
-
-        # TODO: think about whether data needs to be interpolated
-        # interp_df = self.interpolate_telemetry_data(df)
-        # self._pqf.write(path, df)
-        # self._db.create_table(path, df, "telemetry")
-        # self._db.create_table(path, interp_df, "telemetry")
-
-
-    # def combine_telemetry(self):
-    #     if self.session is None:
-    #         return pd.DataFrame()
-    #
-    #     drivers = self.session.drivers
-    #     combined_telemetry = []
-    #     for driver in drivers:
-    #         laps = self.session.laps.pick_drivers(driver)
-    #         telemetry = self.get_all_telemetry(laps)
-    #
-    #         telemetry['year'] = self.session.year
-    #         telemetry['race'] = self.session.race.lower()
-    #         telemetry['session'] = self.session
-    #         telemetry.columns = (telemetry.columns
-    #                          .str.replace('(?<=[a-z])(?=[A-Z])', '_', regex=True)
-    #                          .str.lower())
-    #         telemetry = timedel_to_seconds(telemetry)
-    #         combined_telemetry.append(telemetry)
-    #
-    #     combined_df = pd.concat(combined_telemetry)
-    #     return combined_df
 
     def get_all_telemetry(self, laps):
         telemetry_list = []

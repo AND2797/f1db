@@ -1,5 +1,5 @@
 import fastf1
-from f1_data_service.src.F1Data.fastf1_client import FastF1
+from etl_service.src.f1_data.fastf1_client import FastF1
 
 def get_session_data(year, race, session):
     session = fastf1.get_session(year, race, session)
