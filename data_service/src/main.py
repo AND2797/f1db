@@ -27,12 +27,14 @@ class FlightServer(pa.flight.FlightServerBase):
         # self.add_data_sources()
 
     def ingest_telemetry_data(self):
+        logger.info("Ingesting telemetry data...")
         parquet_files_glob = os.path.join(self.data_root, "*/*/*/telemetry/*.parquet")
         files = glob.glob(parquet_files_glob)
         sql = f"CREATE TABLE telemetry AS SELECT * FROM read_parquet({files});"
         self.conn.execute(sql)
 
     def ingest_lap_data(self):
+        logger.info("Ingesting lap data...")
         parquet_files_glob = os.path.join(self.data_root, "*/*/*/laps.parquet")
         files = glob.glob(parquet_files_glob)
         sql = f"CREATE TABLE laps AS SELECT * FROM read_parquet({files});"

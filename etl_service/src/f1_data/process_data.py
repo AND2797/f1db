@@ -32,7 +32,6 @@ class F1DataProcessor:
         laps = self.post_process_laps(laps)
 
         self._pqf.write(laps, self.data_root.joinpath("laps.parquet"))
-        # self.duckdb.create_table(path, laps, "laps")
 
     def write_telemetry_by_driver(self):
         drivers = self.session_data.laps['Driver'].unique()
@@ -76,10 +75,10 @@ class F1DataProcessor:
     def _create_data_dir(self, f1dr: F1DataRequest):
         base_path = Path(get_property("App", "data_root"))
         year = self.data_request.year
-        race = self.data_request.race.lower()
-        session = self.data_request.session.lower()
+        race = self.data_request.race.lower().replace(' ', '_')
+        session = self.data_request.session.lower().replace(' ', '_')
         # TODO: fix these one off string formattings. need a system for consistent string formatting
-        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session.replace(' ', '_').lower()}")
+        session_path = base_path.joinpath(f"{year}", f"{race}", f"{session}")
         session_path.mkdir(parents=True, exist_ok=True)
         session_path.joinpath('telemetry').mkdir(parents=True, exist_ok=True)
         return session_path

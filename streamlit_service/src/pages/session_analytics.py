@@ -44,14 +44,14 @@ def main():
     #TODO: implement these cascading filters better. clean up
     # Select year
     year = set(possible_filters['year'].tolist())
-    # years = arrow_duckdb_client.execute("SELECT distinct(year) FROM laps")['year'].tolist()
     option_year = st.multiselect("Year", year, default=st.session_state['option_year'])
+
     st.session_state['option_year'] = option_year
     if option_year:
         filter_on_year = possible_filters['year'].isin(option_year)
         race = set(possible_filters[filter_on_year]['race'].tolist())
-        st.session_state['option_race'] = st.multiselect("Race", race, default=st.session_state['option_race'])
-        option_race = st.session_state['option_race']
+        option_race = st.multiselect("Race", race, default=st.session_state['option_race'])
+        st.session_state['option_race'].extend(option_race)
         if option_race:
             filter_on_race = possible_filters['race'].isin(option_race)
             session = set(possible_filters[filter_on_race & filter_on_year]['session'].tolist())
