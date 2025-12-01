@@ -1,7 +1,11 @@
 import duckdb
 import pandas as pd
+from data_service.src.app_utils.logger_utils import setup_logger
+from data_service.src.app_utils.config_utils import get_property
 
-class DuckDBClient:
+logger = setup_logger(get_property("App", "log_file"))
+
+class DuckClient:
     def __init__(self, conn_str):
         self.conn = duckdb.connect(conn_str)
 
@@ -14,19 +18,34 @@ class DuckDBClient:
         query = f"ATTACH '{db_path}' as {attach_as};"
         self.conn.execute(query)
 
-    def create_table(self, df, table_name, path):
+    def ctas_df(self, df, table_name):
         """
         :param df: dataframe to be written to .db
         :param table_name: name of the duckdb table to be created
         :param path: absolute path of .db file
         :return:
         """
-        con = duckdb.connect(path)
-        con.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * from df")
-        con.close()
+        query = f"CREATE OR REPLACE TABLE {table_name} AS SELECT * from df"
+        self.conn.execute(query)
+
+    def ctas_parquet(self, files, table_name):
+        """
+        :param files: parquet files used for table creation
+        :param table_name: name of the duckdb table to be created
+        :param path: absolute path of .db file
+        :return:
+        """
+        query = f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM read_parquet({files});"
+        self.conn.execute(query)
+
+    def query(self, sql):
+        return self.conn.execute(sql)
 
     def discover_sources(self, path):
         pass
+
+    def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()
 
 
 
