@@ -67,5 +67,6 @@ class FlightServer(pa.flight.FlightServerBase):
 
 
 if __name__ == '__main__':
-    server = FlightServer()
+    db_path = os.path.join(get_property("App", "data_root"), "data.db")
+    server = FlightServer(db_path=db_path)
     server.serve()

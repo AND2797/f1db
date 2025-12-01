@@ -18,7 +18,7 @@ class DuckClient:
         query = f"ATTACH '{db_path}' as {attach_as};"
         self.conn.execute(query)
 
-    def ctas_df(self, df, table_name, path):
+    def ctas_df(self, df, table_name):
         """
         :param df: dataframe to be written to .db
         :param table_name: name of the duckdb table to be created
@@ -35,7 +35,7 @@ class DuckClient:
         :param path: absolute path of .db file
         :return:
         """
-        query = f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet({files});"
+        query = f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM read_parquet({files});"
         self.conn.execute(query)
 
     def query(self, sql):
