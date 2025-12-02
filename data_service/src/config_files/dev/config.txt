@@ -1,3 +1,7 @@
 [App]
 log_file=/Users/aditya/Projects/projects_data/logs/FlightService.log
 data_root=/Users/aditya/Projects/projects_data/f1db
+
+[Iceberg]
+catalog=f1db
+
